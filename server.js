@@ -11,12 +11,13 @@ const Contact = require('./model/contact');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // DATABASE CONNECTION
 mongoose.connect(process.env.DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    useFindAndModify: false
 });
 
 const db = mongoose.connection;
@@ -74,27 +75,25 @@ app.post('/new', async (req, res) => {
 
 app.put('/edit/:id', async (req, res) => {
     const id = req.params.id;
-    console.log(id);
+    console.log("ID PARAMS: ", id);
     const body = req.body;
+    console.log("REQ BODY: ", req.body);
     try {
         await Contact.findOne({ email: body.email }, async (err, found) => {
             if (err) throw err;
             if (found) {
-                console.log(found);
                 if (found._id.toString() !== id) {
-                    console.log(typeof found._id);
-                    console.log(typeof id);
-                    console.log("Same id: ", found._id, id);
                     res.status(409).send({ message: "This email already exists" });
-                } else {
-                    console.log("first found: ", found);
-                    found.name = body.name;
-                    found.lastName = body.lastName;
-                    found.email = body.email;
-                    found.phone = body.phone;
-                    found.save();
-                    res.status(200).send(found);
                 }
+            } else {
+                await Contact.findByIdAndUpdate(id, { ...body }, { new: true }, async (err, result) => {
+                    if (err) {
+                        throw err;
+                    } else {
+                        console.log("changed");
+                        res.status(200).send(result);
+                    }
+                })
             }
         })
     } catch {
