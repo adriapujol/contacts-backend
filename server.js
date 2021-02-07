@@ -4,13 +4,14 @@ if (process.env.NODE_ENV !== "production") {
 
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Contact = require('./model/contact');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // DATABASE CONNECTION
 mongoose.connect(process.env.DATABASE_URL, {
@@ -53,7 +54,7 @@ app.delete('/delete/:id', async (req, res) => {
 
 app.post('/new', async (req, res) => {
     try {
-        await Contact.findOne({ email: req.body.email }, async function (err, found) {
+        await Contact.findOne({ email: req.body.email }, async (err, found) => {
             if (err) throw err;
             if (found) {
                 console.log("This contact already exists");
@@ -65,6 +66,37 @@ app.post('/new', async (req, res) => {
             }
 
         });
+    } catch {
+        res.status(500).send("There was an error");
+    }
+})
+
+
+app.put('/edit/:id', async (req, res) => {
+    const id = req.params.id;
+    console.log(id);
+    const body = req.body;
+    try {
+        await Contact.findOne({ email: body.email }, async (err, found) => {
+            if (err) throw err;
+            if (found) {
+                console.log(found);
+                if (found._id.toString() !== id) {
+                    console.log(typeof found._id);
+                    console.log(typeof id);
+                    console.log("Same id: ", found._id, id);
+                    res.status(409).send({ message: "This email already exists" });
+                } else {
+                    console.log("first found: ", found);
+                    found.name = body.name;
+                    found.lastName = body.lastName;
+                    found.email = body.email;
+                    found.phone = body.phone;
+                    found.save();
+                    res.status(200).send(found);
+                }
+            }
+        })
     } catch {
         res.status(500).send("There was an error");
     }
