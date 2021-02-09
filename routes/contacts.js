@@ -3,8 +3,6 @@ const router = express.Router();
 const Contact = require('../model/contact');
 
 
-// ROUTES
-
 router.get('/', async (req, res) => {
     try {
         const contacts = await Contact.find({});
@@ -16,7 +14,6 @@ router.get('/', async (req, res) => {
 
 router.delete('/delete/:id', async (req, res) => {
     const id = req.params.id;
-    console.log(id);
     try {
         await Contact.findByIdAndDelete(id).exec();
         res.status(200).send({ message: "Contact deleted." });
@@ -47,20 +44,13 @@ router.post('/new', async (req, res) => {
 router.put('/edit/:id', async (req, res) => {
     const id = req.params.id;
     const body = req.body;
-    console.log(body);
     try {
         await Contact.findOne({ email: body.email }, async (err, found) => {
-            console.log("Before found if");
             if (err) throw err;
             if (found) {
-                // console.log(found);
                 if (found._id.toString() !== id) {
-                    // console.log(typeof found._id);
-                    // console.log(typeof id);
-                    // console.log("Same id: ", found._id, id);
                     res.status(409).send({ message: "This email already exists" });
                 } else {
-                    // console.log("first found: ", found);
                     found.name = body.name;
                     found.lastName = body.lastName;
                     found.email = body.email;
@@ -73,7 +63,6 @@ router.put('/edit/:id', async (req, res) => {
                     if (err) {
                         throw err;
                     } else {
-                        console.log("changed");
                         res.status(200).send(result);
                     }
                 })
